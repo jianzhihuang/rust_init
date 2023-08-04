@@ -1,5 +1,5 @@
 {
-    "commentTranslate.hover.enabled": true,
+    "commentTranslate.hover.enabled": false,
     "cSpell.words": [
         "rustacean"
     ]
