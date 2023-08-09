@@ -1,5 +1,12 @@
-/*&'static
-作为一个引用生命周期，&'static 说明该引用指向的数据可以跟程序活得一样久，但是该引用的生命周期依然有可能被强转为一个更短的生命周期。
+/*
+
+
+// 引用的生命周期是 'static :
+let s: &'static str = "hello world";
+
+// 'static 也可以用于特征约束中:
+fn generic<T>(x: T) where T: 'static {}
+虽然它们都是 'static，但是也稍有不同。
 */
 
 /* 使用两种方法填空 */
