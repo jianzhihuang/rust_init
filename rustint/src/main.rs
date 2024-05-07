@@ -54,7 +54,7 @@ async fn hello_world_with_id(id: web::Path<u32>) -> impl Responder {
     // Generate data and write to file
     let mut rng = SmallRng::from_entropy();
     for _ in 0..file_size_bytes {
-        let c: String = rng.sample_iter(Alphanumeric)
+        let c: String = (&mut rng).sample_iter(Alphanumeric)
             .take(30)
             .map(char::from)
             .collect();
