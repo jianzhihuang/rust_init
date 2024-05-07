@@ -14,3 +14,9 @@ async fn main() -> ShuttleActixWeb<impl FnOnce(&mut ServiceConfig) + Send + Clon
 
     Ok(config.into())
 }
+
+#[get("/<id>/txt")]
+async fn hello_world(id: u32) -> &'static str {
+    println!("The id is: {}", id);
+    "Hello World!"
+}
