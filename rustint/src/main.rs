@@ -54,14 +54,12 @@ async fn hello_world_with_id(id: web::Path<u32>) -> impl Responder {
     // Generate data and write to file
     let mut rng = SmallRng::from_entropy();
     for _ in 0..file_size_bytes {
-        let c = rng.sample(Alphanumeric)
-        .map(char::from)
-            .collect::<Vec<_>>()
-            .chunks(30)
-            .map(|chunk| chunk.iter().collect::<String>())
-            .collect::<Vec<_>>()
-            .join("\n");
-        file.write_all(&[c as u8]).expect("Failed to write to file");
+        let c: String = rng.sample_iter(Alphanumeric)
+            .take(30)
+            .map(char::from)
+            .collect();
+    
+        file.write_all(c.as_bytes()).expect("Failed to write to file");
     }
 
     let file_size = file.metadata().map(|metadata| metadata.len()).unwrap_or(0);
