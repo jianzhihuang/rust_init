@@ -48,18 +48,22 @@ async fn hello_world_with_id(id: web::Path<u32>) -> impl Responder {
             .body(Bytes::from(fs::read(file_name).expect("Failed to read file")));
     }
 
-    let file_size_bytes: usize = (file_size_mb * 1_000_000).try_into().unwrap();
+    
     let mut file = File::create(&file_name).expect("Failed to create file");
 
-    // Generate data and write to file
-    let mut rng = SmallRng::from_entropy();
-    for _ in 0..file_size_bytes {
-        let c: String = (&mut rng).sample_iter(Alphanumeric)
-            .take(30)
-            .map(char::from)
-            .collect();
     
-        file.write_all(c.as_bytes()).expect("Failed to write to file");
+    for _ in 0..file_size_mb {
+        let data: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(1_000_000) // 生成約 1MB 的數據
+        .map(char::from)
+        .collect::<Vec<_>>()
+        .chunks(30)
+        .map(|chunk| chunk.iter().collect::<String>())
+        .collect::<Vec<_>>()
+        .join("\n");
+    
+        file.write_all(data.as_bytes()).expect("Failed to write to file");
     }
 
     let file_size = file.metadata().map(|metadata| metadata.len()).unwrap_or(0);
