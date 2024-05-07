@@ -9,3 +9,10 @@ edition = "2021"
 rand = "0.8.5"
 warp = "0.3"
 tokio = { version = "1.37.0", features = ["full"] }
+serde_json = "1.0.116"
+vercel_runtime = "1.1.1"
+
+# Cargo.toml
+[[bin]]
+name = "handler"
+path = "api/handler.rs"
