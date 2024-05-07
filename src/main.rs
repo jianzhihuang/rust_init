@@ -1,22 +1,25 @@
-/*
+use rand::{distributions::Alphanumeric, Rng};
+use std::error::Error;
+use std::fs::File;
+use std::io::Write;
 
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut file = File::create("test.txt")?;
 
-// 引用的生命周期是 'static :
-let s: &'static str = "hello world";
+    // 每次寫入約 1MB 的數據，重複 300 次來達到大約 300MB
+    for _ in 0..300 {
+        let data: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(1_000_000) // 生成約 1MB 的數據
+            .map(char::from)
+            .collect::<Vec<_>>()
+            .chunks(30)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n");
 
-// 'static 也可以用于特征约束中:
-fn generic<T>(x: T) where T: 'static {}
-虽然它们都是 'static，但是也稍有不同。
-*/
+        file.write_all(data.as_bytes())?;
+    }
 
-/* 使用两种方法填空 */
-fn main() {
-    __;
-    need_static(v);
-
-    println!("Success!")
-}
-
-fn need_static(r: &'static str) {
-    assert_eq!(r, "hello");
+    Ok(())
 }
