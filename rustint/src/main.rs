@@ -40,12 +40,41 @@ async fn hello_world_with_id(Path((id, type_)): Path<(String, String)>) -> impl 
     match type_.as_str() {
         "heart" => {
             let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
-            "❤️".repeat(count)
+            let hearts = vec!["❤️", "♡", "💖", "💟", "🎁"];
+            let idx = rand::thread_rng().gen_range(0..hearts.len());
+            hearts[idx].repeat(count)
         },
         "smile" =>{
-            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個笑臉符號
-            "😄".repeat(count)
-        }
+            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
+            let hearts = vec!["😀", "🤩","😊","🙂","☺️","😋"];
+            let idx = rand::thread_rng().gen_range(0..hearts.len());
+            hearts[idx].repeat(count)
+        },
+        "cry" =>{
+            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
+            let hearts = vec!["😢", "😭","😿"];
+            let idx = rand::thread_rng().gen_range(0..hearts.len());
+            hearts[idx].repeat(count)
+        },
+        "cat" =>{
+            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
+            let hearts = vec!["🐈", "😾", "🐱","😻","🐱‍🚀"];
+            let idx = rand::thread_rng().gen_range(0..hearts.len());
+            hearts[idx].repeat(count)
+        },
+        "dog" => {
+            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
+            let hearts = vec!["🐶", "🐕", "🦮", "🐩","🐕‍🦺"];
+            let idx = rand::thread_rng().gen_range(0..hearts.len());
+            hearts[idx].repeat(count)
+        },
+       
+        "pig" => {
+            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
+            let hearts = vec!["🐷", "🐽", "🐖", "🐗"];
+            let idx = rand::thread_rng().gen_range(0..hearts.len());
+            hearts[idx].repeat(count)
+        },
         "text" => format!("Hello, world! Your ID is {}  {}", id, type_),
         _ => format!("Hello, world! Your ID is {}  {}", id, type_),
     }
