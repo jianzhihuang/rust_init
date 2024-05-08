@@ -74,9 +74,13 @@
         <!--按下去 指引到/hello 頁面 !--->
         <script>
             function add(inputValue, selectValue) {
-                window.location.href = "/hello/" + inputValue + "/" + selectValue;
+                if (selectValue === "rand") {
+                    console.log("inputValue", inputValue);
+                    window.location.href = "/rand/" + inputValue;
+                } else {
+                    window.location.href = "/hello/" + inputValue + "/" + selectValue;
+                }
             }
-
         </script>
         <!--!--->
         <!-- !--->
@@ -91,6 +95,7 @@
             <option value="cat">貓臉符號 &#x1F63A;</option>
             <option value="dog">狗臉符號 &#x1F436;</option>
             <option value="pig">豬臉符號 &#x1F437;</option>
+            <option value="rand">亂碼 🦩</option>
         </select>
 
         <input type="button" value="新增"
