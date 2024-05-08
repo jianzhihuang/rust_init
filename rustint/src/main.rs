@@ -1,57 +1,67 @@
-use actix_web::{get, web::ServiceConfig,web::Path ,HttpResponse, HttpServer, Responder ,web};
-use shuttle_actix_web::ShuttleActixWeb;
+
 use std::fs::File;
 use std::io::Write;
 use rand::Rng;
 use rand::distributions::Alphanumeric;
-use actix_web::web::Bytes;
-use actix_web::http::header;
+
 use rand::rngs::SmallRng;
 
 use rand::SeedableRng;
 use std::fs;
-
 use tokio::fs as other_fs;
-#[get("/")]
-async fn hello_world() -> &'static str {
-    "Hello World!"
-}
+use axum::{extract::Path, response::IntoResponse, Router};
 
+use axum::routing::get;
+use tower_http::services::{ServeDir};
+use tower_http::services::ServeFile;
+use axum::http::StatusCode; // 加入這行
+use axum::response::Response;
+use std::io::Read;
+
+use tower_http::classify;
+async fn hello_world() -> &'static str {
+    "Hello, world!"
+}
 
 
 #[shuttle_runtime::main]
-async fn main() -> ShuttleActixWeb<impl FnOnce(&mut ServiceConfig) + Send + Clone + 'static> {
-    let config = move |cfg: &mut ServiceConfig| {
-        cfg.service(hello_world)
-           .service(hello_world_with_id)
-           .default_service(
-            // 404 for GET request
-            web::route().to(|| async {
-                HttpResponse::NotFound().body("Oh no! We couldn't find the route you requested.")
-            })
-        );
-    };
+async fn main() -> shuttle_axum::ShuttleAxum {
+   let router = Router::new()
+    .route_service("/", ServeDir::new("static")
+        .not_found_service(ServeFile::new("static/index.html") 
+     ))
+     .route("/hello/:id", get(hello_world_with_id))
+     .route("/rand/:id", get(get_rand));
 
-    Ok(config.into())
+    Ok(router.into())
 }
-#[get("/{id}/txt")]
-async fn hello_world_with_id(id: web::Path<u32>) -> impl Responder {
-    let file_size_mb = id.into_inner();
+//入參 id
+async fn hello_world_with_id(Path(id): Path<String>) -> impl IntoResponse {
+    format!("Hello, world! Your ID is {}", id)
+}
+
+
+
+async fn get_rand(id: Path<u32>) -> impl IntoResponse {
+    let file_size_mb = *id;
     let file_name = format!("{}.txt", file_size_mb);
 
     // Check if file already exists
     if fs::metadata(&file_name).is_ok() {
         let content_disposition = format!("attachment; filename={}", file_name);
-        return HttpResponse::Ok()
-            .header(header::CONTENT_TYPE, "application/octet-stream")
-            .header(header::CONTENT_DISPOSITION, content_disposition)
-            .body(Bytes::from(fs::read(file_name).expect("Failed to read file")));
+        let mut file = fs::File::open(&file_name).unwrap();
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer).unwrap();
+        let body = axum::body::Body::from(buffer); // 將 std::io::Bytes<_> 轉換為 hyper::Body
+
+        return Response::builder()
+            .header("Content-Disposition", content_disposition)
+            .body(body) // 使用 hyper::Body
+            .unwrap();
     }
 
-    
     let mut file = File::create(&file_name).expect("Failed to create file");
 
-    
     for _ in 0..file_size_mb {
         let data: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -62,18 +72,17 @@ async fn hello_world_with_id(id: web::Path<u32>) -> impl Responder {
         .map(|chunk| chunk.iter().collect::<String>())
         .collect::<Vec<_>>()
         .join("\n");
-    
+
         file.write_all(data.as_bytes()).expect("Failed to write to file");
     }
 
     let file_size = file.metadata().map(|metadata| metadata.len()).unwrap_or(0);
 
     let content_disposition = format!("attachment; filename={}", file_name);
-    HttpResponse::Ok()
-        .header(header::CONTENT_TYPE, "application/octet-stream")
-        .header(header::CONTENT_DISPOSITION, content_disposition)
-        .body(Bytes::from(fs::read(file_name).expect("Failed to read file")))
-}
-async fn not_found() -> impl Responder {
-    HttpResponse::NotFound().body("Oh no! We couldn't find the route you requested.")
+    axum::response::Response::builder()
+    .status(StatusCode::OK)
+    .header("Content-Type", "application/octet-stream")
+    .header("Content-Disposition", content_disposition)
+    .body(axum::body::Body::from(fs::read(&file_name).expect("Failed to read file"))) // 使用 axum::body::Body
+    .unwrap()
 }
