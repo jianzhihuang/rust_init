@@ -4,62 +4,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <h1>!!!!!!!!!!</h1>
-    <!--按下去 指引到/hello 頁面 !--->
-    <script>
-        function add() {
-            window.location.href = "/hello/sss";
+    <title>無聊做作</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: rgba(240, 240, 240, 0.9);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
         }
 
-        function update() {
-            window.location.href = "/update";
+        .container {
+            text-align: center;
         }
 
-        function search() {
-            window.location.href = "/search";
+        h1 {
+            color: #444;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        function clear() {
-            window.location.href = "/clear";
+        input,
+        select {
+            margin: 10px 0;
+            padding: 15px;
+            /* 增加 padding */
+            font-size: 1.2em;
+            /* 增加字體大小 */
+            border: 1px solid rgba(221, 221, 221, 0.5);
+            background-color: rgba(255, 255, 255, 0.5);
+            transition: box-shadow 0.3s ease;
         }
 
-        function show() {
-            window.location.href = "/show";
+        input[type="number"] {
+            width: 100%;
+            /* 增加寬度 */
         }
 
-        function sort() {
-            window.location.href = "/sort";
+        select {
+            width: auto;
+            /* 保持原來的寬度 */
         }
 
-        function search() {
-            window.location.href = "/search";
+        input:focus,
+        select:focus {
+            box-shadow: 0 0 5px rgba(81, 203, 238, 1);
         }
-    </script>
-    <!--!--->
-    <!-- !--->
-    <!--!--->
-    <!--!--->
-    <input type="text" placeholder="輸入框">
 
-    <input type="button" value="新增" onclick="add()">
-    <input type="button" value="刪除" onclick="del()">
+        input[type="button"] {
+            background-color: rgba(76, 175, 80, 0.7);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
 
-    <input type="button" value="修改" onclick="update()">
-
-    <input type="button" value="查詢" onclick="search()">
-
-    <input type="button" value="清除" onclick="clear()">
-
-    <input type="button" value="顯示" onclick="show()">
-
-    <input type="button" value="排序" onclick="sort()">
-
-    <input type="button" value="搜尋" onclick="search()">
+        input[type="button"]:hover {
+            background-color: rgba(69, 160, 73, 0.7);
+        }
+    </style>
 </head>
 
 <body>
+    <div class="container">
+        <h1>輸入你要的數量及符號</h1>
+        <!--按下去 指引到/hello 頁面 !--->
+        <script>
+            function add(inputValue, selectValue) {
+                window.location.href = "/hello/" + inputValue + "/" + selectValue;
+            }
 
+        </script>
+        <!--!--->
+        <!-- !--->
+        <!--!--->
+        <!--!--->
+        <input type="number" id="myInput" placeholder="輸入框">
+
+        <select id="mySelect">
+            <option value="heart">愛心符號 &hearts;</option>
+            <option value="smile">笑臉符號 &#x1F600;</option>
+        </select>
+
+        <input type="button" value="新增"
+            onclick="add(document.getElementById('myInput').value, document.getElementById('mySelect').value)">
+        <!-- !--->
+    </div>
 </body>
 
 </html>

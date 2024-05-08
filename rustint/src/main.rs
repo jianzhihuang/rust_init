@@ -30,16 +30,26 @@ async fn main() -> shuttle_axum::ShuttleAxum {
     .route_service("/", ServeDir::new("static")
         .not_found_service(ServeFile::new("static/index.html") 
      ))
-     .route("/hello/:id", get(hello_world_with_id))
+     .route("/hello/:id/:type", get(hello_world_with_id))
      .route("/rand/:id", get(get_rand));
 
     Ok(router.into())
 }
 //入參 id
-async fn hello_world_with_id(Path(id): Path<String>) -> impl IntoResponse {
-    format!("Hello, world! Your ID is {}", id)
+async fn hello_world_with_id(Path((id, type_)): Path<(String, String)>) -> impl IntoResponse {
+    match type_.as_str() {
+        "heart" => {
+            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
+            "❤️".repeat(count)
+        },
+        "smile" =>{
+            let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個笑臉符號
+            "😄".repeat(count)
+        }
+        "text" => format!("Hello, world! Your ID is {}  {}", id, type_),
+        _ => format!("Hello, world! Your ID is {}  {}", id, type_),
+    }
 }
-
 
 
 async fn get_rand(id: Path<u32>) -> impl IntoResponse {
