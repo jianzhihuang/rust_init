@@ -31,7 +31,7 @@ async fn main() -> shuttle_axum::ShuttleAxum {
         .not_found_service(ServeFile::new("static/index.html") 
      ))
      .route("/hello/:id/:type", get(hello_world_with_id))
-     .route("/rand/:id", get(get_rand));
+     .route("/rand/:id", get(get_rand_txt));
 
     Ok(router.into())
 }
@@ -124,4 +124,108 @@ async fn get_rand(id: Path<u32>) -> impl IntoResponse {
     .header("Content-Disposition", content_disposition)
     .body(axum::body::Body::from(fs::read(&file_name).expect("Failed to read file"))) // 使用 axum::body::Body
     .unwrap()
+}
+pub async fn get_rand_txt(id: Path<u32>) -> impl IntoResponse {
+    let file_size_mb = *id;
+    let file_name = format!("{}.txt", file_size_mb);
+
+    // Check if file already exists
+    if fs::metadata(&file_name).is_ok() {
+        let content_disposition = format!("attachment; filename={}", file_name);
+        let body = axum::body::Body::from(fs::read(&file_name).expect("Failed to read file"));
+
+        return Response::builder()
+            .status(StatusCode::OK)
+            .header("Content-Type", "application/octet-stream")
+            .header("Content-Disposition", content_disposition)
+            .body(body)
+            .unwrap();
+    }
+
+    let start_time = Instant::now(); // 獲取開始時間
+    let file_size = file_size_mb * 1024 * 1024;
+
+    // 创建并设置文件大小
+    let file = match OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(&file_name) {
+        Ok(file) => file,
+        Err(_) => return Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(axum::body::Body::from("Failed to open file"))
+            .unwrap(),
+    };
+
+    if let Err(_) = file.set_len(file_size) {
+        return Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(axum::body::Body::from("Failed to set file length"))
+            .unwrap();
+    }
+
+    // 内存映射文件
+    let mmap = unsafe { MmapMut::map_mut(&file).expect("無法將檔案映射到記憶體") };
+    let mmap = Arc::new(Mutex::new(mmap));
+
+    // 使用多线程批量生成数据
+    let num_threads = 4; // 增加線程數量
+    let chunk_size = (file_size as usize) / num_threads;
+    let handles: Vec<_> = (0..num_threads)
+        .map(|i| {
+            let mmap = Arc::clone(&mmap);
+            let start = i * chunk_size;
+            let end = if i == num_threads - 1 {
+                file_size as usize
+            } else {
+                (i + 1) * chunk_size
+            };
+
+            task::spawn(async move {
+                let mut rng = thread_rng();
+                let mut offset = start;
+                let mut buffer: Vec<u8> = Vec::with_capacity(chunk_size);
+
+                // 按照 30 行的规律填充数据
+                while offset < end {
+                    let line: String = (0..30).map(|_| rng.sample(Alphanumeric) as char).collect();
+                    buffer.extend_from_slice(line.as_bytes());
+                    buffer.push(b'\n');
+                    offset += 31; // 每行 30 字符，1 个换行符
+                }
+
+                // 确保不超出目标范围
+                let buffer_size = buffer.len();
+                let chunk_slice = if buffer_size > end - start {
+                    &buffer[..(end - start)]
+                } else {
+                    &buffer[..buffer_size]
+                };
+
+                // 通过锁定的映射文件写入数据块
+                let mut mmap = mmap.lock().unwrap();
+                mmap[start..start + chunk_slice.len()].copy_from_slice(chunk_slice);
+            })
+        })
+        .collect();
+
+    // 等待所有线程完成
+    for handle in handles {
+        handle.await.expect("Thread panicked");
+    }
+
+    let duration = start_time.elapsed(); // 計算執行時間
+
+    println!("函數執行時間：{:?}", duration); // 輸出執行時間
+
+    let content_disposition = format!("attachment; filename={}", file_name);
+    let body = axum::body::Body::from(fs::read(&file_name).expect("Failed to read file"));
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/octet-stream")
+        .header("Content-Disposition", content_disposition)
+        .body(body)
+        .unwrap()
 }
