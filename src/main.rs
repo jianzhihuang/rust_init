@@ -1,5 +1,3 @@
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 use std::fs::File;
 use std::io::Write;
 
@@ -13,11 +11,18 @@ use tokio::fs as other_fs;
 use axum::http::StatusCode; // 加入這行
 use axum::response::Response;
 use axum::routing::get;
+use memmap2::MmapMut;
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use std::fs::OpenOptions;
 use std::io::Read;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::thread::spawn;
+use std::time::Instant;
+use tokio::task;
 use tower_http::services::ServeDir;
 use tower_http::services::ServeFile;
 
-use tower_http::classify;
 async fn hello_world() -> &'static str {
     "Hello, world!"
 }
@@ -162,7 +167,7 @@ pub async fn get_rand_txt(id: Path<u32>) -> impl IntoResponse {
         }
     };
 
-    if let Err(_) = file.set_len(file_size) {
+    if let Err(_) = file.set_len(file_size.into()) {
         return Response::builder()
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .body(axum::body::Body::from("Failed to set file length"))
@@ -223,13 +228,16 @@ pub async fn get_rand_txt(id: Path<u32>) -> impl IntoResponse {
 
     println!("函數執行時間：{:?}", duration); // 輸出執行時間
 
-    let content_disposition = format!("attachment; filename={}", file_name);
-    let body = axum::body::Body::from(fs::read(&file_name).expect("Failed to read file"));
+    // let content_disposition = format!("attachment; filename={}", file_name);
+    // let body = axum::body::Body::from(fs::read(&file_name).expect("Failed to read file"));
+    let duration_message = format!("<p>函數執行時間：{:?}</p>", duration);
+    let body_content = duration_message;
+
+    let body = axum::body::Body::from(body_content);
 
     Response::builder()
         .status(StatusCode::OK)
-        .header("Content-Type", "application/octet-stream")
-        .header("Content-Disposition", content_disposition)
+        .header("Content-Type", "text/html; charset=utf-8")
         .body(body)
         .unwrap()
 }
