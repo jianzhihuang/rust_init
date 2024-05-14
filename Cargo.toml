@@ -1,32 +1,12 @@
 [package]
-name = "rust_vercel_demo"
+name = "rustint"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+axum = "0.7.5"
+shuttle-axum = "0.44.0"
+shuttle-runtime = "0.44.0"
+tokio = "1.26.0"
 rand = "0.8.5"
-warp = "0.3"
-tokio = { version = "1", features = ["macros"] }
-serde_json = { version = "1", features = ["raw_value"] }
-# Documentation: https://docs.rs/vercel_runtime/latest/vercel_runtime
-vercel_runtime = "1.1.0"
-# You can specify a library for shared logic here (optional)
-# [lib]
-# path = "src-rs/lib.rs"
-
-# Each handler has to be specified as [[bin]]
-[[bin]]
-name = "handler"
-path = "api/handler.rs"
-
-
-# Note that you need to provide unique names for each binary:
-# [[bin]]
-# name = "user-id"
-# path = "api/user/[id].rs"
-#
-# [[bin]]
-# name = "group-id"
-# path = "api/group/[id].rs"
+tower-http = { version = "0.5.2", features = ["fs"] }

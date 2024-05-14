@@ -1,37 +1,36 @@
-
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use std::fs::File;
 use std::io::Write;
-use rand::Rng;
-use rand::distributions::Alphanumeric;
 
 use rand::rngs::SmallRng;
 
+use axum::{extract::Path, response::IntoResponse, Router};
 use rand::SeedableRng;
 use std::fs;
 use tokio::fs as other_fs;
-use axum::{extract::Path, response::IntoResponse, Router};
 
-use axum::routing::get;
-use tower_http::services::{ServeDir};
-use tower_http::services::ServeFile;
 use axum::http::StatusCode; // 加入這行
 use axum::response::Response;
+use axum::routing::get;
 use std::io::Read;
+use tower_http::services::ServeDir;
+use tower_http::services::ServeFile;
 
 use tower_http::classify;
 async fn hello_world() -> &'static str {
     "Hello, world!"
 }
 
-
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
-   let router = Router::new()
-    .route_service("/", ServeDir::new("static")
-        .not_found_service(ServeFile::new("static/index.html") 
-     ))
-     .route("/hello/:id/:type", get(hello_world_with_id))
-     .route("/rand/:id", get(get_rand_txt));
+    let router = Router::new()
+        .route_service(
+            "/",
+            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
+        )
+        .route("/hello/:id/:type", get(hello_world_with_id))
+        .route("/rand/:id", get(get_rand_txt));
 
     Ok(router.into())
 }
@@ -43,43 +42,42 @@ async fn hello_world_with_id(Path((id, type_)): Path<(String, String)>) -> impl 
             let hearts = vec!["❤️", "♡", "💖", "💟", "🎁"];
             let idx = rand::thread_rng().gen_range(0..hearts.len());
             hearts[idx].repeat(count)
-        },
-        "smile" =>{
+        }
+        "smile" => {
             let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
-            let hearts = vec!["😀", "🤩","😊","🙂","☺️","😋"];
+            let hearts = vec!["😀", "🤩", "😊", "🙂", "☺️", "😋"];
             let idx = rand::thread_rng().gen_range(0..hearts.len());
             hearts[idx].repeat(count)
-        },
-        "cry" =>{
+        }
+        "cry" => {
             let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
-            let hearts = vec!["😢", "😭","😿"];
+            let hearts = vec!["😢", "😭", "😿"];
             let idx = rand::thread_rng().gen_range(0..hearts.len());
             hearts[idx].repeat(count)
-        },
-        "cat" =>{
+        }
+        "cat" => {
             let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
-            let hearts = vec!["🐈", "😾", "🐱","😻","🐱‍🚀"];
+            let hearts = vec!["🐈", "😾", "🐱", "😻", "🐱‍🚀"];
             let idx = rand::thread_rng().gen_range(0..hearts.len());
             hearts[idx].repeat(count)
-        },
+        }
         "dog" => {
             let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
-            let hearts = vec!["🐶", "🐕", "🦮", "🐩","🐕‍🦺"];
+            let hearts = vec!["🐶", "🐕", "🦮", "🐩", "🐕‍🦺"];
             let idx = rand::thread_rng().gen_range(0..hearts.len());
             hearts[idx].repeat(count)
-        },
-       
+        }
+
         "pig" => {
             let count = id.parse::<usize>().unwrap_or(1); // 如果轉換失敗，則生成一個愛心符號
             let hearts = vec!["🐷", "🐽", "🐖", "🐗"];
             let idx = rand::thread_rng().gen_range(0..hearts.len());
             hearts[idx].repeat(count)
-        },
+        }
         "text" => format!("Hello, world! Your ID is {}  {}", id, type_),
         _ => format!("Hello, world! Your ID is {}  {}", id, type_),
     }
 }
-
 
 async fn get_rand(id: Path<u32>) -> impl IntoResponse {
     let file_size_mb = *id;
@@ -103,27 +101,30 @@ async fn get_rand(id: Path<u32>) -> impl IntoResponse {
 
     for _ in 0..file_size_mb {
         let data: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(1_000_000) // 生成約 1MB 的數據
-        .map(char::from)
-        .collect::<Vec<_>>()
-        .chunks(30)
-        .map(|chunk| chunk.iter().collect::<String>())
-        .collect::<Vec<_>>()
-        .join("\n");
+            .sample_iter(&Alphanumeric)
+            .take(1_000_000) // 生成約 1MB 的數據
+            .map(char::from)
+            .collect::<Vec<_>>()
+            .chunks(30)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n");
 
-        file.write_all(data.as_bytes()).expect("Failed to write to file");
+        file.write_all(data.as_bytes())
+            .expect("Failed to write to file");
     }
 
     let file_size = file.metadata().map(|metadata| metadata.len()).unwrap_or(0);
 
     let content_disposition = format!("attachment; filename={}", file_name);
     axum::response::Response::builder()
-    .status(StatusCode::OK)
-    .header("Content-Type", "application/octet-stream")
-    .header("Content-Disposition", content_disposition)
-    .body(axum::body::Body::from(fs::read(&file_name).expect("Failed to read file"))) // 使用 axum::body::Body
-    .unwrap()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/octet-stream")
+        .header("Content-Disposition", content_disposition)
+        .body(axum::body::Body::from(
+            fs::read(&file_name).expect("Failed to read file"),
+        )) // 使用 axum::body::Body
+        .unwrap()
 }
 pub async fn get_rand_txt(id: Path<u32>) -> impl IntoResponse {
     let file_size_mb = *id;
@@ -150,12 +151,15 @@ pub async fn get_rand_txt(id: Path<u32>) -> impl IntoResponse {
         .read(true)
         .write(true)
         .create(true)
-        .open(&file_name) {
+        .open(&file_name)
+    {
         Ok(file) => file,
-        Err(_) => return Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(axum::body::Body::from("Failed to open file"))
-            .unwrap(),
+        Err(_) => {
+            return Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(axum::body::Body::from("Failed to open file"))
+                .unwrap()
+        }
     };
 
     if let Err(_) = file.set_len(file_size) {
